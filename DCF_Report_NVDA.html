@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DCF Valuation Report - NVDA</title>
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --success: #22c55e;
+            --warning: #eab308;
+            --danger: #ef4444;
+            --gray-50: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-300: #cbd5e1;
+            --gray-500: #64748b;
+            --gray-700: #334155;
+            --gray-900: #0f172a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--gray-100);
+            color: var(--gray-700);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--gray-900) 0%, #1e3a5f 100%);
+            color: white;
+            padding: 3rem 2rem;
+            border-radius: 16px;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header .subtitle {
+            color: var(--gray-300);
+            font-size: 1.1rem;
+        }
+
+        .header .meta {
+            display: flex;
+            gap: 2rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .header .meta-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header .meta-label {
+            font-size: 0.8rem;
+            color: var(--gray-300);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .header .meta-value {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .card-title {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--gray-500);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--gray-100);
+        }
+
+        .recommendation-card {
+            background: linear-gradient(135deg, #ef444415 0%, #ef444405 100%);
+            border-left: 4px solid #ef4444;
+        }
+
+        .recommendation {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #ef4444;
+        }
+
+        .recommendation-desc {
+            color: var(--gray-500);
+            margin-top: 0.5rem;
+        }
+
+        .value-large {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+        .value-change {
+            font-size: 1rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            margin-left: 0.5rem;
+        }
+
+        .positive { color: var(--success); }
+        .negative { color: var(--danger); }
+        .positive-bg { background: #dcfce7; color: #166534; }
+        .negative-bg { background: #fee2e2; color: #991b1b; }
+
+        .scenarios {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .scenario {
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .scenario.bear { background: #fef2f2; }
+        .scenario.base { background: #f0f9ff; }
+        .scenario.bull { background: #f0fdf4; }
+
+        .scenario-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .scenario.bear .scenario-label { color: #991b1b; }
+        .scenario.base .scenario-label { color: #1e40af; }
+        .scenario.bull .scenario-label { color: #166534; }
+
+        .scenario-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .scenario.bear .scenario-value { color: #dc2626; }
+        .scenario.base .scenario-value { color: #2563eb; }
+        .scenario.bull .scenario-value { color: #16a34a; }
+
+        .scenario-upside {
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        th {
+            font-weight: 600;
+            color: var(--gray-500);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        .sensitivity-table {
+            font-size: 0.9rem;
+        }
+
+        .sensitivity-table th {
+            background: var(--gray-50);
+            text-align: center;
+        }
+
+        .sensitivity-table td {
+            text-align: center;
+        }
+
+        .chart-container {
+            display: flex;
+            justify-content: center;
+            margin: 1rem 0;
+        }
+
+        .assumptions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .assumption-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px dotted var(--gray-200);
+        }
+
+        .assumption-label {
+            color: var(--gray-500);
+        }
+
+        .assumption-value {
+            font-weight: 600;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--gray-500);
+            font-size: 0.9rem;
+        }
+
+        .disclaimer {
+            background: #fffbeb;
+            border: 1px solid #fcd34d;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 2rem;
+            font-size: 0.85rem;
+            color: #92400e;
+        }
+
+        .wide-card {
+            grid-column: 1 / -1;
+        }
+
+        .reverse-dcf-card {
+            background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        }
+
+        .reverse-dcf-card .card-title {
+            color: #94a3b8;
+            border-bottom-color: #334155;
+        }
+
+        .implied-rate {
+            font-size: 3rem;
+            font-weight: 800;
+            color: #60a5fa;
+            letter-spacing: -1px;
+        }
+
+        .implied-label {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-top: 0.25rem;
+        }
+
+        .rate-comparison {
+            display: flex;
+            gap: 2rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .rate-item {
+            flex: 1;
+            min-width: 140px;
+        }
+
+        .rate-item-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #64748b;
+            margin-bottom: 0.25rem;
+        }
+
+        .rate-item-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        .rate-item-value.implied { color: #60a5fa; }
+        .rate-item-value.model { color: #94a3b8; }
+        .rate-item-value.gap.positive { color: #34d399; }
+        .rate-item-value.gap.negative { color: #f87171; }
+
+        .interp-badge {
+            display: inline-block;
+            margin-top: 1rem;
+            padding: 0.4rem 1rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            background: rgba(96, 165, 250, 0.15);
+            border: 1px solid rgba(96, 165, 250, 0.4);
+            color: #93c5fd;
+        }
+
+        @media print {
+            .container { padding: 0; }
+            .card { break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>NVIDIA Corporation</h1>
+            <p class="subtitle">NVDA | Technology | Semiconductors</p>
+            <div class="meta">
+                <div class="meta-item">
+                    <span class="meta-label">Current Price</span>
+                    <span class="meta-value">$198.48</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Market Cap</span>
+                    <span class="meta-value">$4.82T</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Report Date</span>
+                    <span class="meta-value">May 04, 2026 at 17:46</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="grid">
+            <!-- Recommendation Card -->
+            <div class="card recommendation-card">
+                <h3 class="card-title">Investment Recommendation</h3>
+                <div class="recommendation">STRONG SELL</div>
+                <p class="recommendation-desc">Stock appears significantly overvalued</p>
+            </div>
+
+            <!-- Fair Value Card -->
+            <div class="card">
+                <h3 class="card-title">DCF Fair Value (Base Case)</h3>
+                <div>
+                    <span class="value-large">$105.86</span>
+                    <span class="value-change negative-bg">
+                        -46.7%
+                    </span>
+                </div>
+                <p style="color: var(--gray-500); margin-top: 0.5rem;">vs Current Price: $198.48</p>
+            </div>
+
+            <!-- Scenario Analysis -->
+            <div class="card wide-card">
+                <h3 class="card-title">Scenario Analysis - Fair Value per Share</h3>
+                <div class="scenarios">
+                    <div class="scenario bear">
+                        <div class="scenario-label">Bear Case</div>
+                        <div class="scenario-value">$62.29</div>
+                        <div class="scenario-upside negative">-68.6%</div>
+                        <div style="font-size: 0.8rem; color: var(--gray-500); margin-top: 0.5rem;">
+                            Growth: 24.00%
+                        </div>
+                    </div>
+                    <div class="scenario base">
+                        <div class="scenario-label">Base Case</div>
+                        <div class="scenario-value">$105.86</div>
+                        <div class="scenario-upside negative">-46.7%</div>
+                        <div style="font-size: 0.8rem; color: var(--gray-500); margin-top: 0.5rem;">
+                            Growth: 40.00%
+                        </div>
+                    </div>
+                    <div class="scenario bull">
+                        <div class="scenario-label">Bull Case</div>
+                        <div class="scenario-value">$144.32</div>
+                        <div class="scenario-upside positive">-27.3%</div>
+                        <div style="font-size: 0.8rem; color: var(--gray-500); margin-top: 0.5rem;">
+                            Growth: 50.00%
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reverse DCF -->
+            
+            <div class="card wide-card reverse-dcf-card">
+                <h3 class="card-title" style="color:#94a3b8; border-bottom-color:#334155;">
+                    Reverse DCF — Growth Rate Implied by Market Price
+                </h3>
+                <p style="color:#94a3b8; font-size:0.9rem; margin-bottom:1.2rem;">
+                    To justify the current price of <strong style="color:white">$198.48</strong>,
+                    free cash flows must grow at:
+                </p>
+                <div class="implied-rate">60.8%<span style="font-size:1.5rem">/yr</span></div>
+                <div class="implied-label">Implied FCF growth rate over 5 years</div>
+                <div class="rate-comparison">
+                    <div class="rate-item">
+                        <div class="rate-item-label">Market Implies</div>
+                        <div class="rate-item-value implied">60.8%</div>
+                    </div>
+                    <div class="rate-item">
+                        <div class="rate-item-label">Our Model Uses</div>
+                        <div class="rate-item-value model">40.0%</div>
+                    </div>
+                    <div class="rate-item">
+                        <div class="rate-item-label">Growth Premium Priced In</div>
+                        <div class="rate-item-value gap positive">+20.8pp</div>
+                    </div>
+                </div>
+                <div class="interp-badge">Very Aggressive — rarely sustained at scale</div>
+            </div>
+            
+
+            <!-- WACC Breakdown -->
+            <div class="card">
+                <h3 class="card-title">WACC Analysis</h3>
+                <div class="value-large">16.81%</div>
+                <table style="margin-top: 1rem;">
+                    <tr>
+                        <td>Cost of Equity</td>
+                        <td style="text-align: right; font-weight: 600;">16.84%</td>
+                    </tr>
+                    <tr>
+                        <td>Cost of Debt (after-tax)</td>
+                        <td style="text-align: right; font-weight: 600;">1.99%</td>
+                    </tr>
+                    <tr>
+                        <td>Weight of Equity</td>
+                        <td style="text-align: right; font-weight: 600;">99.77%</td>
+                    </tr>
+                    <tr>
+                        <td>Weight of Debt</td>
+                        <td style="text-align: right; font-weight: 600;">0.23%</td>
+                    </tr>
+                    <tr>
+                        <td>Beta</td>
+                        <td style="text-align: right; font-weight: 600;">2.24</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Enterprise Value Bridge -->
+            <div class="card">
+                <h3 class="card-title">Valuation Bridge (Base Case)</h3>
+                <table>
+                    <tr>
+                        <td>PV of FCF (Years 1-5)</td>
+                        <td style="text-align: right; font-weight: 600;">$859.80B</td>
+                    </tr>
+                    <tr>
+                        <td>PV of Terminal Value</td>
+                        <td style="text-align: right; font-weight: 600;">$1.71T</td>
+                    </tr>
+                    <tr style="background: var(--gray-50);">
+                        <td><strong>Enterprise Value</strong></td>
+                        <td style="text-align: right; font-weight: 700;">$2.57T</td>
+                    </tr>
+                    <tr>
+                        <td>Less: Net Debt</td>
+                        <td style="text-align: right; font-weight: 600;">($435.00M)</td>
+                    </tr>
+                    <tr style="background: var(--gray-50);">
+                        <td><strong>Equity Value</strong></td>
+                        <td style="text-align: right; font-weight: 700;">$2.57T</td>
+                    </tr>
+                    <tr>
+                        <td>Shares Outstanding</td>
+                        <td style="text-align: right; font-weight: 600;">24.30B</td>
+                    </tr>
+                    <tr style="background: #f0f9ff;">
+                        <td><strong>Fair Value / Share</strong></td>
+                        <td style="text-align: right; font-weight: 700; color: var(--primary);">$105.86</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- FCF Projection Chart -->
+            <div class="card wide-card">
+                <h3 class="card-title">Free Cash Flow Projection (Base Case)</h3>
+                <div class="chart-container">
+                    
+        <svg width="600" height="300" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="fcfGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:0.3"/>
+                    <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:0"/>
+                </linearGradient>
+            </defs>
+
+            <!-- Background -->
+            <rect width="600" height="300" fill="#f8fafc" rx="8"/>
+
+            <!-- Grid lines -->
+        <line x1="60" y1="60.0" x2="540" y2="60.0" stroke="#e2e8f0" stroke-dasharray="4"/><text x="50" y="64.0" text-anchor="end" font-size="10" fill="#64748b">519.95B</text><line x1="60" y1="105.0" x2="540" y2="105.0" stroke="#e2e8f0" stroke-dasharray="4"/><text x="50" y="109.0" text-anchor="end" font-size="10" fill="#64748b">389.96B</text><line x1="60" y1="150.0" x2="540" y2="150.0" stroke="#e2e8f0" stroke-dasharray="4"/><text x="50" y="154.0" text-anchor="end" font-size="10" fill="#64748b">259.97B</text><line x1="60" y1="195.0" x2="540" y2="195.0" stroke="#e2e8f0" stroke-dasharray="4"/><text x="50" y="199.0" text-anchor="end" font-size="10" fill="#64748b">129.99B</text><line x1="60" y1="240.0" x2="540" y2="240.0" stroke="#e2e8f0" stroke-dasharray="4"/><text x="50" y="244.0" text-anchor="end" font-size="10" fill="#64748b">0.00</text><polygon points="60.0,206.53180222526328 156.0,193.1445231153686 252.0,174.40233236151602 348.0,148.16326530612244 444.0,111.42857142857142 540.0,60.0 540.0,240 60.0,240" fill="url(#fcfGradient)"/><polyline points="60.0,206.53180222526328 156.0,193.1445231153686 252.0,174.40233236151602 348.0,148.16326530612244 444.0,111.42857142857142 540.0,60.0" fill="none" stroke="#3b82f6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="60.0" cy="206.53180222526328" r="6" fill="#3b82f6" stroke="white" stroke-width="2"/><text x="60.0" y="260" text-anchor="middle" font-size="11" fill="#64748b">Year 0</text><circle cx="156.0" cy="193.1445231153686" r="6" fill="#3b82f6" stroke="white" stroke-width="2"/><text x="156.0" y="260" text-anchor="middle" font-size="11" fill="#64748b">Year 1</text><circle cx="252.0" cy="174.40233236151602" r="6" fill="#3b82f6" stroke="white" stroke-width="2"/><text x="252.0" y="260" text-anchor="middle" font-size="11" fill="#64748b">Year 2</text><circle cx="348.0" cy="148.16326530612244" r="6" fill="#3b82f6" stroke="white" stroke-width="2"/><text x="348.0" y="260" text-anchor="middle" font-size="11" fill="#64748b">Year 3</text><circle cx="444.0" cy="111.42857142857142" r="6" fill="#3b82f6" stroke="white" stroke-width="2"/><text x="444.0" y="260" text-anchor="middle" font-size="11" fill="#64748b">Year 4</text><circle cx="540.0" cy="60.0" r="6" fill="#3b82f6" stroke="white" stroke-width="2"/><text x="540.0" y="260" text-anchor="middle" font-size="11" fill="#64748b">Year 5</text></svg>
+                </div>
+            </div>
+
+            <!-- Historical FCF -->
+            <div class="card">
+                <h3 class="card-title">Historical Free Cash Flow</h3>
+                <table>
+                    <thead>
+                        <tr><th>Year</th><th style="text-align: right;">FCF</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>2026</td><td class="positive">$96.68B</td></tr><tr><td>2025</td><td class="positive">$60.85B</td></tr><tr><td>2024</td><td class="positive">$27.02B</td></tr><tr><td>2023</td><td class="positive">$3.81B</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Sensitivity Analysis -->
+            <div class="card wide-card">
+                <h3 class="card-title">Sensitivity Analysis - Fair Value per Share</h3>
+                <p style="color: var(--gray-500); margin-bottom: 1rem; font-size: 0.9rem;">
+                    How fair value changes with different growth rate and WACC assumptions
+                </p>
+                <table class="sensitivity-table"><thead><tr><th>Growth \ WACC</th><th>14.8%</th><th>15.8%</th><th>16.8%</th><th>17.8%</th><th>18.8%</th></tr></thead><tbody><tr><th>38.0%</th><td class="negative">$118.84</td><td class="negative">$108.31</td><td class="negative">$99.30</td><td class="negative">$91.52</td><td class="negative">$84.73</td></tr><tr><th>39.0%</th><td class="negative">$122.78</td><td class="negative">$111.87</td><td class="negative">$102.53</td><td class="negative">$94.47</td><td class="negative">$87.44</td></tr><tr><th>40.0%</th><td class="negative">$126.82</td><td class="negative">$115.52</td><td class="negative">$105.86</td><td class="negative">$97.51</td><td class="negative">$90.23</td></tr><tr><th>41.0%</th><td class="negative">$130.98</td><td class="negative">$119.27</td><td class="negative">$109.27</td><td class="negative">$100.62</td><td class="negative">$93.09</td></tr><tr><th>42.0%</th><td class="negative">$135.24</td><td class="negative">$123.13</td><td class="negative">$112.77</td><td class="negative">$103.82</td><td class="negative">$96.02</td></tr></tbody></table>
+                <p style="color: var(--gray-500); margin-top: 0.5rem; font-size: 0.8rem;">
+                    Current price: $198.48 | Green = Undervalued | Red = Overvalued
+                </p>
+            </div>
+
+            <!-- Key Assumptions -->
+            <div class="card wide-card">
+                <h3 class="card-title">Key Assumptions</h3>
+                <div class="assumptions">
+                    <div class="assumption-item">
+                        <span class="assumption-label">Risk-Free Rate</span>
+                        <span class="assumption-value">4.50%</span>
+                    </div>
+                    <div class="assumption-item">
+                        <span class="assumption-label">Market Risk Premium</span>
+                        <span class="assumption-value">5.50%</span>
+                    </div>
+                    <div class="assumption-item">
+                        <span class="assumption-label">Terminal Growth Rate</span>
+                        <span class="assumption-value">2.50%</span>
+                    </div>
+                    <div class="assumption-item">
+                        <span class="assumption-label">Projection Period</span>
+                        <span class="assumption-value">5 years</span>
+                    </div>
+                    <div class="assumption-item">
+                        <span class="assumption-label">Tax Rate</span>
+                        <span class="assumption-value">15.12%</span>
+                    </div>
+                    <div class="assumption-item">
+                        <span class="assumption-label">Historical FCF Growth</span>
+                        <span class="assumption-value">193.91%</span>
+                    </div>
+                    <div class="assumption-item">
+                        <span class="assumption-label">Growth Rate Source</span>
+                        <span class="assumption-value">Earnings Growth (proxied)</span>
+                    </div>
+                    <div class="assumption-item">
+                        <span class="assumption-label">Growth Rate (Base)</span>
+                        <span class="assumption-value">40.00%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Market Multiples -->
+            <div class="card wide-card">
+                <h3 class="card-title">Market Valuation Multiples</h3>
+                <p style="color: var(--gray-500); margin-bottom: 1rem; font-size: 0.9rem;">
+                    Current market pricing context — what the market is implying about future growth
+                </p>
+                <div class="assumptions">
+                    
+            <div class="assumption-item">
+                <span class="assumption-label">Trailing P/E</span>
+                <span class="assumption-value">40.5x</span>
+            </div>
+            <div class="assumption-item">
+                <span class="assumption-label">Forward P/E</span>
+                <span class="assumption-value">17.7x</span>
+            </div>
+            <div class="assumption-item">
+                <span class="assumption-label">EV / EBITDA</span>
+                <span class="assumption-value">35.8x</span>
+            </div>
+            <div class="assumption-item">
+                <span class="assumption-label">Price / Book</span>
+                <span class="assumption-value">30.7x</span>
+            </div>
+            <div class="assumption-item">
+                <span class="assumption-label">Market Cap / FCF</span>
+                <span class="assumption-value">49.9x</span>
+            </div>
+        
+                </div>
+            </div>
+        </div>
+
+        <div class="disclaimer">
+            <strong>Disclaimer:</strong> This DCF analysis is for educational and informational purposes only.
+            It should not be considered as financial advice. The model relies on assumptions and projections
+            that may not reflect actual future performance. Always conduct your own research and consult with
+            a qualified financial advisor before making investment decisions.
+        </div>
+
+        <footer class="footer">
+            <p>Generated by Advanced DCF Valuation Model</p>
+            <p>May 04, 2026 at 17:46</p>
+        </footer>
+    </div>
+</body>
+</html>

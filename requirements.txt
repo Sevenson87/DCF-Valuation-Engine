@@ -1,0 +1,6 @@
+# DCF Valuation Model — Requirements
+# Python 3.8+
+
+yfinance>=0.2.0
+pandas>=1.5.0
+numpy>=1.23.0
