@@ -55,3 +55,17 @@ htmlcov/
 # Logs
 *.log
 logs/
+
+# Fichiers internes (ne pas pousser)
+GUIDE_INTERPRETATION.md
+MATIERE_DU_PROJET.md
+commandes.txt
+GITHUB_SETUP_GUIDE.md
+GITHUB_PROFILE_README.md
+push_all_to_github.ps1
+cleanup_github.ps1
+gitignore_python.txt
+
+# Rapports avec timestamps
+Report_*_17*.html
+AlphaReport_17*.html
